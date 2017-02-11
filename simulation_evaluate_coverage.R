@@ -93,7 +93,7 @@ for(k in 1:coverage_iter_number){
 	## Simulation parameters
 	sigma = 2*matrix(c(1,.5,.5,3), 2, 2)	
 	sigma_inv = solve(sigma)
-	mu = c(-5.1, 5.2)
+	mu = c(5.15, 5.2)
 	n = 20
 	
 	## Create data
@@ -137,8 +137,8 @@ for(k in 1:coverage_iter_number){
 	### Generate points 'below' the profile likelihood that I will use to estimate true profile likelihood ###
 	
 	## Estimation parameters
-	t_g = 10			# Allotted horizontal error in each point, the larger, the smaller the horizontal error
-	sample = 20		# Number of points I will generate to estimate the profile likelihood
+	t_g = 1000 	#Allotted horizontal error in each point, the larger, the smaller the horizontal error
+	sample = 100		# Number of points I will generate to estimate the profile likelihood
 	
 	mu_hat_max = vector(length = sample)	## Allocate the memory for storing our noisy x_star values
 	
@@ -148,9 +148,7 @@ for(k in 1:coverage_iter_number){
 	likehood_sample = dmvnorm(mu_sample, data_mean, sigma/n, log  = TRUE)	# Get their likelihood i.e. y coordinate	
 	
 	## Add in horizontal noise
-	for(i in 1:sample){
-		mu_hat_max[i] = max(mvrnorm(1, mu_sample[i,],sigma/t_g))  ##these are the x-coordinates with horizontal noise, could vectorize?
-	}
+	 mu_hat_max = apply(mvrnorm(sample, c(0,0), sigma/t_g) + mu_sample, MARGIN = 1, FUN = max)
 	
 	## This is to get an understanding of the horizontal error we introduced and how it comes
 	## out in the maximum, this is not necessary for the final result, but for exploration purposes
@@ -177,7 +175,7 @@ for(k in 1:coverage_iter_number){
 	
 	## Find the optimized quadratice parameters, i.e. my PL estimate
 	optimized_parameters = meta_model_optimization(a_init, b_init, c_reparam, mu_hat_max, 
-	likehood_sample, x_star_sd, y_star_max, 10000, sample)
+	likehood_sample, x_star_sd, y_star_max, 1000, sample)
 	
 	a_reparam = optimized_parameters[[1]]
 	a = -exp(a_reparam)
@@ -214,55 +212,57 @@ for(k in 1:coverage_iter_number){
 	### Create a plots to check out the results while it's running ###
 	
 	## Plot the true profie likelihood in blue
-	plot(theta_set, theta_set_like, cex = .02, xlim = c(mle_sample-2.3,mle_sample+2.3), ylim = c(mle_like-3, mle_like+.3), col=4, xlab = "Theta", ylab = "Likelihood", main = "Sim2-mu_2, small MCMC sample")
-	points(mle_sample,mle_like, col=4, cex = .3)	## plot the mle
+	#plot(theta_set, theta_set_like, cex = .02, xlim = c(mle_sample-2.3,mle_sample+2.3), ylim = c(mle_like-3, mle_like+.3), col=4, xlab = "Theta", ylab = "Likelihood", main = "Sim2-mu_2, small MCMC sample")
+	#points(mle_sample,mle_like, col=4, cex = .3)	## plot the mle
 	
 	## plot cut off and lower and upper bounds for true PL
-	abline(h = pl_cutoff)
-	points(true_L_cur, pl_cutoff, col = 4)
-	points(true_U_cur, pl_cutoff, col = 4)
+	#abline(h = pl_cutoff)
+	#points(true_L_cur, pl_cutoff, col = 4)
+	#points(true_U_cur, pl_cutoff, col = 4)
 	
 	## Plot the initial estimate of the profile likelihood in turqouise
-	quad_fun = function(x) {return(a_init*(x+b_init/(2*a_init))^2 + c_reparam + y_star_max)}
-	points(theta_set, quad_fun(theta_set),col=5, cex = .02)
+	#quad_fun = function(x) {return(a_init*(x+b_init/(2*a_init))^2 + c_reparam + y_star_max)}
+	#points(theta_set, quad_fun(theta_set),col=5, cex = .02)
 	
 	## Plot the optimized PL estimate in pink
-	quad_fun = function(x) {return(a*(x+b/(2*a))^2 + c_reparam+y_star_max)}
-	points(theta_set, quad_fun(theta_set),col=6, cex = .02)
+	#quad_fun = function(x) {return(a*(x+b/(2*a))^2 + c_reparam+y_star_max)}
+	#points(theta_set, quad_fun(theta_set),col=6, cex = .02)
 	
 	## Plot the new cut off and lower and bounds for estimated PL
-	abline(h = new_cut_off)
-	abline(v = max(mu) )
-	points(L_vec_noise_cur, new_cut_off, col = 4)
-	points(U_vec_noise_cur, new_cut_off, col = 4)
+	#abline(h = new_cut_off)
+	#abline(v = max(mu) )
+	#points(L_vec_noise_cur, new_cut_off, col = 4)
+	#points(U_vec_noise_cur, new_cut_off, col = 4)
 	
 	## Print the iteration
-	print(k)
+	#print(k)
 }
 
 
 ### Check out results ###
 
-MLE_hat
-MLE_var
-a_store 
-b_store
-a_reparam_store
-a_var_store
-b_var_store
-a_reparam_var_store
+#MLE_hat
+#MLE_var
+#a_store 
+#b_store
+#a_reparam_store
+#a_var_store
+#b_var_store
+#a_reparam_var_store
 
 # Compare variance of MLE_hat to estimated variance of MLE_hat
-var(MLE_hat-true_MLE)
-mean(MLE_var)
+#var(MLE_hat-true_MLE)
+#mean(MLE_var)
 
 ## Bias of MLE_hat
-mean(MLE_hat-true_MLE)
+#mean(MLE_hat-true_MLE)
 
-which(!(true_U > 5.2 & true_L < 5.2))
+#which(!(true_U > 5.2 & true_L < 5.2))
 
-which(!(U_vec_noise > 5.2 & L_vec_noise < 5.2))
+#which(!(U_vec_noise > 5.2 & L_vec_noise < 5.2))
 
-sum(true_U > 5.2 & true_L < 5.2)
-sum(U_vec_noise > 5.2 & L_vec_noise < 5.2)
+#sum(true_U > 5.2 & true_L < 5.2)
+#sum(U_vec_noise > 5.2 & L_vec_noise < 5.2)
 
+write_table = rbind(true_L, L_vec_noise, true_U, U_vec_noise)
+write.table(write_table, file= 'output_file')
